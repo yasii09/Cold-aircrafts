@@ -35,13 +35,15 @@ jobs:
       - name: Extract project
         run: |
           ZIP_FILE="YasiGPT_Android_Project (1).zip"
-          test -n "$ZIP_FILE"
+          test -f "$ZIP_FILE"
+          mkdir -p extracted
           unzip "$ZIP_FILE" -d extracted
           PROJECT_FILE=$(find extracted -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
           test -n "$PROJECT_FILE"
           PROJECT_DIR=$(dirname "$PROJECT_FILE")
-          mkdir project
+          mkdir -p project
           cp -R "$PROJECT_DIR"/. project/
+          /
 
       - name: Build APK
         run: |
