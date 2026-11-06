@@ -34,7 +34,7 @@ jobs:
 
       - name: Extract project
         run: |
-          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*fixed*.zip' -print -quit)
+          ZIP_FILE="YasiGPT_Android_Project (1).zip"
           test -n "$ZIP_FILE"
           unzip "$ZIP_FILE" -d extracted
           PROJECT_FILE=$(find extracted -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit)
