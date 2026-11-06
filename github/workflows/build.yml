@@ -1,10 +1,11 @@
+
 name: Build YASI GPT APK
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - 'YasiGPT_Android_Project_Fixed.zip'
+      - '**.zip'
       - '.github/workflows/build.yml'
 
 jobs:
@@ -26,16 +27,23 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 
-      - name: Install Android SDK 35
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Android SDK
+        run: |
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Extract project
         run: |
-          unzip YasiGPT_Android_Project_Fixed.zip
-          mv YasiGPT_Android_Project project
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' | head -n 1)
+          test -n "$ZIP_FILE"
+          unzip "$ZIP_FILE" -d extracted
+          PROJECT_DIR=$(find extracted -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | xargs dirname)
+          test -n "$PROJECT_DIR"
+          mkdir project
+          cp -r "$PROJECT_DIR"/. project/
 
       - name: Build APK
         run: |
@@ -47,4 +55,5 @@ jobs:
         with:
           name: YASI-GPT-APK
           path: project/app/build/outputs/apk/debug/app-debug.apk
+          
           
