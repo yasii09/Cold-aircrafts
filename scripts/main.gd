@@ -4,6 +4,7 @@ extends Node3D
 const FlightPlane = preload("res://scripts/flight.gd")
 const TrafficPlane = preload("res://scripts/traffic_plane.gd")
 const Radar = preload("res://scripts/radar.gd")
+const FlightControls = preload("res://scripts/flight_controls.gd")
 
 var camera_yaw := 0.0
 var camera_pitch := -0.18
@@ -119,6 +120,10 @@ func create_ui():
     )
     warning_label.visible = false
     layer.add_child(warning_label)
+
+    var controls = FlightControls.new()
+    layer.add_child(controls)
+    controls.controls_changed.connect(player.set_controls)
 
 
 func _process(delta):
