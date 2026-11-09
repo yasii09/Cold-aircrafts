@@ -2,25 +2,51 @@
 extends Node3D
 
 @export var speed := 18.0
-@export var turn_speed := 1.5
+@export var turn_speed := 1.2
 @export var climb_speed := 7.0
 
 var pitch_input := 0.0
 var roll_input := 0.0
 
+func _ready():
+    create_aircraft()
+
 func _process(delta):
-    rotation.x += pitch_input * delta * turn_speed
-    rotation.z += roll_input * delta * turn_speed
-    translate(Vector3(0, 0, -speed * delta))
+    rotation.x += pitch_input * turn_speed * delta
+    rotation.z += roll_input * turn_speed * delta
+    position += -global_basis.z * speed * delta
 
-func set_pitch(value: float):
-    pitch_input = clamp(value, -1.0, 1.0)
+func _unhandled_input(event):
+    if event is InputEventKey:
+        pitch_input = 0.0
+        roll_input = 0.0
 
-func set_roll(value: float):
-    roll_input = clamp(value, -1.0, 1.0)
+        if Input.is_key_pressed(KEY_UP):
+            pitch_input = -1.0
+        if Input.is_key_pressed(KEY_DOWN):
+            pitch_input = 1.0
+        if Input.is_key_pressed(KEY_LEFT):
+            roll_input = 1.0
+        if Input.is_key_pressed(KEY_RIGHT):
+            roll_input = -1.0
 
-func climb_up(delta: float):
-    position.y += climb_speed * delta
+func add_part(size: Vector3, pos: Vector3, color: Color):
+    var part = MeshInstance3D.new()
+    var mesh = BoxMesh.new()
+    mesh.size = size
+    part.mesh = mesh
+    part.position = pos
 
-func climb_down(delta: float):
-    position.y -= climb_speed * delta
+    var mat = StandardMaterial3D.new()
+    mat.albedo_color = color
+    part.material_override = mat
+    add_child(part)
+
+func create_aircraft():
+    var grey = Color(0.38, 0.43, 0.48)
+
+    add_part(Vector3(0.55, 0.45, 4.5), Vector3.ZERO, grey)
+    add_part(Vector3(4.2, 0.12, 1.5), Vector3(0, 0, 0.2), grey)
+    add_part(Vector3(0.18, 0.9, 0.8), Vector3(0, 0.55, 1.7), grey)
+    add_part(Vector3(1.7, 0.12, 0.6), Vector3(0, 0.25, 1.7), grey)
+    add_part(Vector3(0.3, 0.3, 1.2), Vector3(0, 0, -2.5), Color(0.2, 0.3, 0.4))
