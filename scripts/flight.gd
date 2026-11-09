@@ -7,6 +7,7 @@ extends Node3D
 
 var pitch_input := 0.0
 var roll_input := 0.0
+var throttle_input := 0.0
 
 func _ready():
     create_aircraft()
@@ -15,6 +16,13 @@ func _process(delta):
     rotation.x += pitch_input * turn_speed * delta
     rotation.z += roll_input * turn_speed * delta
     position += -global_basis.z * speed * delta
+    position.y += throttle_input * climb_speed * delta
+    position.y = clamp(position.y, -10.0, 100.0)
+
+func set_controls(pitch: float, roll: float, throttle: float):
+    pitch_input = clamp(pitch, -1.0, 1.0)
+    roll_input = clamp(roll, -1.0, 1.0)
+    throttle_input = clamp(throttle, -1.0, 1.0)
 
 func _unhandled_input(event):
     if event is InputEventKey:
