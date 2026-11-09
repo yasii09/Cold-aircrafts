@@ -7,6 +7,7 @@ signal back_requested
 var selected_mission := 1
 var selected_difficulty := "EASY"
 var mission_buttons: Array[Button] = []
+var difficulty_buttons: Array[Button] = []
 
 
 func _ready():
@@ -30,6 +31,7 @@ func create_page():
 
     create_mission_grid()
     create_difficulty_buttons()
+    create_start_button()
     create_back_button()
 
 
@@ -66,14 +68,17 @@ func create_difficulty_buttons():
         var button = Button.new()
         button.text = difficulties[i]
         button.position = Vector2(330 + i * 210, 550)
-        button.size = Vector2(180, 60)
+        button.size = Vector2(180, 55)
         add_child(button)
+        difficulty_buttons.append(button)
 
         var difficulty = difficulties[i]
         button.pressed.connect(func():
             selected_difficulty = difficulty
             update_selection()
         )
+
+    update_selection()
 
 
 func update_selection():
@@ -83,6 +88,28 @@ func update_selection():
             else Color.WHITE
         )
 
+    for i in range(difficulty_buttons.size()):
+        var difficulty = ["EASY", "NORMAL", "HARD"][i]
+        difficulty_buttons[i].modulate = (
+            Color.LIME if difficulty == selected_difficulty
+            else Color.WHITE
+        )
+
+
+func create_start_button():
+    var button = Button.new()
+    button.text = "START MISSION"
+    button.position = Vector2(500, 625)
+    button.size = Vector2(280, 65)
+    add_child(button)
+
+    button.pressed.connect(func():
+        mission_selected.emit(
+            selected_mission,
+            selected_difficulty
+        )
+    )
+
 
 func create_back_button():
     var button = Button.new()
@@ -90,6 +117,7 @@ func create_back_button():
     button.position = Vector2(30, 30)
     button.size = Vector2(130, 55)
     add_child(button)
+
     button.pressed.connect(func():
         back_requested.emit()
     )
