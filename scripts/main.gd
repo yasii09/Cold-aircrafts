@@ -7,6 +7,8 @@ const Radar = preload("res://scripts/radar.gd")
 const FlightControls = preload("res://scripts/flight_controls.gd")
 const EnvironmentScene = preload("res://scenes/environment.gd")
 const AirportScene = preload("res://scenes/airport.gd")
+const MainMenu = preload("res://scripts/menu.gd")
+const HangarScene = preload("res://scenes/hangar.gd")
 
 var camera_yaw := 0.0
 var camera_pitch := -0.18
@@ -17,8 +19,11 @@ var last_touch := Vector2.ZERO
 var camera_pivot: Node3D
 var player: Node3D
 var traffic_planes: Array[Node3D] = []
+
 var radar: Control
 var warning_label: Label
+var flight_ui: CanvasLayer
+var current_page: Node
 
 
 func _ready():
@@ -28,12 +33,17 @@ func _ready():
     create_player()
     create_traffic()
     create_ui()
+    create_main_menu()
 
 
 func _input(event):
+    if current_page != null:
+        return
+
     if event is InputEventScreenTouch:
         dragging = event.pressed
         last_touch = event.position
+
     elif event is InputEventScreenDrag and dragging:
         var movement = event.position - last_touch
         camera_yaw -= movement.x * touch_sensitivity
@@ -110,8 +120,9 @@ func create_traffic():
 
 
 func create_ui():
-    var layer = CanvasLayer.new()
-    add_child(layer)
+    flight_ui = CanvasLayer.new()
+    flight_ui.name = "FlightUI"
+    add_child(flight_ui)
 
     radar = Radar.new()
     radar.anchor_left = 1.0
@@ -120,7 +131,7 @@ func create_ui():
     radar.offset_right = -10
     radar.offset_top = 10
     radar.offset_bottom = 190
-    layer.add_child(radar)
+    flight_ui.add_child(radar)
 
     warning_label = Label.new()
     warning_label.text = "NEARBY TRAFFIC"
@@ -129,14 +140,104 @@ func create_ui():
         "font_color", Color.YELLOW
     )
     warning_label.visible = false
-    layer.add_child(warning_label)
+    flight_ui.add_child(warning_label)
 
     var controls = FlightControls.new()
-    layer.add_child(controls)
+    flight_ui.add_child(controls)
     controls.controls_changed.connect(player.set_controls)
+
+    flight_ui.visible = false
+
+
+func create_main_menu():
+    if is_instance_valid(current_page):
+        current_page.queue_free()
+
+    var menu = MainMenu.new()
+    menu.name = "MainMenu"
+    add_child(menu)
+    menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    menu.menu_selected.connect(on_menu_selected)
+    current_page = menu
+    flight_ui.visible = false
+
+
+func on_menu_selected(option: String):
+    if is_instance_valid(current_page):
+        current_page.queue_free()
+
+    current_page = null
+
+    match option:
+        "free_flight":
+            flight_ui.visible = true
+
+        "hangar":
+            open_hangar()
+
+        "stages":
+            show_message("MISSIONS - COMING SOON")
+
+        "settings":
+            show_message("SETTINGS - COMING SOON")
+
+
+func open_hangar():
+    flight_ui.visible = false
+
+    var hangar = HangarScene.new()
+    hangar.name = "Hangar"
+    add_child(hangar)
+    current_page = hangar
+
+    var back = Button.new()
+    back.text = "BACK TO MENU"
+    back.position = Vector2(20, 180)
+    back.size = Vector2(220, 60)
+
+    var layer = CanvasLayer.new()
+    hangar.add_child(layer)
+    layer.add_child(back)
+
+    back.pressed.connect(create_main_menu)
+
+
+func show_message(message: String):
+    var page = Control.new()
+    page.name = "MessagePage"
+    page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    add_child(page)
+    current_page = page
+
+    var background = ColorRect.new()
+    background.color = Color(0.025, 0.045, 0.08)
+    background.set_anchors_and_offsets_preset(
+        Control.PRESET_FULL_RECT
+    )
+    page.add_child(background)
+
+    var title = Label.new()
+    title.text = message
+    title.position = Vector2(0, 180)
+    title.size = Vector2(1280, 80)
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 32)
+    page.add_child(title)
+
+    var back = Button.new()
+    back.text = "BACK"
+    back.position = Vector2(500, 320)
+    back.size = Vector2(280, 65)
+    page.add_child(back)
+
+    back.pressed.connect(create_main_menu)
 
 
 func _process(delta):
+    if current_page != null:
+        return
+
     if camera_pivot:
         var target = Vector3(camera_pitch, camera_yaw, 0)
         camera_pivot.rotation = camera_pivot.rotation.lerp(
@@ -157,7 +258,10 @@ func update_radar():
         if not is_instance_valid(plane):
             continue
 
-        var local_position = player.to_local(plane.global_position)
+        var local_position = player.to_local(
+            plane.global_position
+        )
+
         var radar_point = Vector2(
             local_position.x / 100.0,
             local_position.z / 100.0
