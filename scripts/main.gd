@@ -6,6 +6,7 @@ const TrafficPlane = preload("res://scripts/traffic_plane.gd")
 const Radar = preload("res://scripts/radar.gd")
 const FlightControls = preload("res://scripts/flight_controls.gd")
 const EnvironmentScene = preload("res://scenes/environment.gd")
+const AirportScene = preload("res://scenes/airport.gd")
 
 var camera_yaw := 0.0
 var camera_pitch := -0.18
@@ -23,6 +24,7 @@ var warning_label: Label
 func _ready():
     create_environment()
     create_ground()
+    create_airport()
     create_player()
     create_traffic()
     create_ui()
@@ -72,6 +74,11 @@ func create_ground():
     add_child(ground)
 
 
+func create_airport():
+    var airport = AirportScene.new()
+    add_child(airport)
+
+
 func create_player():
     player = Node3D.new()
     player.set_script(FlightPlane)
@@ -118,7 +125,9 @@ func create_ui():
     warning_label = Label.new()
     warning_label.text = "NEARBY TRAFFIC"
     warning_label.position = Vector2(20, 20)
-    warning_label.add_theme_color_override("font_color", Color.YELLOW)
+    warning_label.add_theme_color_override(
+        "font_color", Color.YELLOW
+    )
     warning_label.visible = false
     layer.add_child(warning_label)
 
