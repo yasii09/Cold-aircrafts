@@ -26,6 +26,10 @@ var warning_label: Label
 var flight_ui: CanvasLayer
 var current_page: Node
 
+var mission_marker: Node3D
+var mission_number := 1
+var mission_active := false
+
 
 func _ready():
     create_environment()
@@ -154,6 +158,8 @@ func create_main_menu():
     if is_instance_valid(current_page):
         current_page.queue_free()
 
+    mission_active = false
+
     var menu = MainMenu.new()
     menu.name = "MainMenu"
     add_child(menu)
@@ -205,8 +211,70 @@ func open_stages():
 
 
 func on_mission_selected(mission: int, difficulty: String):
+    if is_instance_valid(current_page):
+        current_page.queue_free()
+
+    current_page = null
+    mission_number = mission
+
+    flight_ui.visible = true
+    start_mission(difficulty)
+
+
+func start_mission(difficulty: String):
+    if is_instance_valid(mission_marker):
+        mission_marker.queue_free()
+
+    var distance := 220.0
+
+    match difficulty:
+        "NORMAL":
+            distance = 320.0
+        "HARD":
+            distance = 450.0
+
+    mission_marker = Node3D.new()
+    mission_marker.position = player.global_position + Vector3(0, 0, -distance)
+    add_child(mission_marker)
+
+    var ring = MeshInstance3D.new()
+    var ring_mesh = TorusMesh.new()
+    ring_mesh.inner_radius = 5.0
+    ring_mesh.outer_radius = 6.0
+    ring.mesh = ring_mesh
+
+    var material = StandardMaterial3D.new()
+    material.albedo_color = Color.CYAN
+    material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    ring.material_override = material
+
+    ring.rotation_degrees.x = 90
+    mission_marker.add_child(ring)
+
+    var label = Label3D.new()
+    label.text = "WAYPOINT"
+    label.position = Vector3(0, 9, 0)
+    label.font_size = 48
+    mission_marker.add_child(label)
+
+    mission_active = true
+    print("MISSION ", mission_number, " STARTED - ", difficulty)
+
+
+func mission_completed():
+    if not mission_active:
+        return
+
+    mission_active = false
+
+    if is_instance_valid(mission_marker):
+        mission_marker.queue_free()
+
+    mission_marker = null
+    flight_ui.visible = false
+
     show_message(
-        "MISSION " + str(mission) + " - " + difficulty
+        "MISSION " + str(mission_number) + " COMPLETED!"
     )
 
 
@@ -261,7 +329,7 @@ func show_message(message: String):
     page.add_child(title)
 
     var back = Button.new()
-    back.text = "BACK"
+    back.text = "BACK TO MENU"
     back.position = Vector2(500, 320)
     back.size = Vector2(280, 65)
     page.add_child(back)
@@ -278,6 +346,12 @@ func _process(delta):
         camera_pivot.rotation = camera_pivot.rotation.lerp(
             target, delta * 5.0
         )
+
+    if mission_active and is_instance_valid(mission_marker):
+        if player.global_position.distance_to(
+            mission_marker.global_position
+        ) < 10.0:
+            mission_completed()
 
     update_radar()
 
