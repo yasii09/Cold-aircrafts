@@ -5,6 +5,7 @@ const FlightPlane = preload("res://scripts/flight.gd")
 const TrafficPlane = preload("res://scripts/traffic_plane.gd")
 const Radar = preload("res://scripts/radar.gd")
 const FlightControls = preload("res://scripts/flight_controls.gd")
+const EnvironmentScene = preload("res://scenes/environment.gd")
 
 var camera_yaw := 0.0
 var camera_pitch := -0.18
@@ -31,7 +32,6 @@ func _input(event):
     if event is InputEventScreenTouch:
         dragging = event.pressed
         last_touch = event.position
-
     elif event is InputEventScreenDrag and dragging:
         var movement = event.position - last_touch
         camera_yaw -= movement.x * touch_sensitivity
@@ -54,6 +54,9 @@ func create_environment():
     var sun = DirectionalLight3D.new()
     sun.rotation_degrees = Vector3(-45, -30, 0)
     add_child(sun)
+
+    var environment_scene = EnvironmentScene.new()
+    add_child(environment_scene)
 
 
 func create_ground():
@@ -115,9 +118,7 @@ func create_ui():
     warning_label = Label.new()
     warning_label.text = "NEARBY TRAFFIC"
     warning_label.position = Vector2(20, 20)
-    warning_label.add_theme_color_override(
-        "font_color", Color.YELLOW
-    )
+    warning_label.add_theme_color_override("font_color", Color.YELLOW)
     warning_label.visible = false
     layer.add_child(warning_label)
 
@@ -148,7 +149,6 @@ func update_radar():
             continue
 
         var local_position = player.to_local(plane.global_position)
-
         var radar_point = Vector2(
             local_position.x / 100.0,
             local_position.z / 100.0
