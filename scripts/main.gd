@@ -9,6 +9,7 @@ const EnvironmentScene = preload("res://scenes/environment.gd")
 const AirportScene = preload("res://scenes/airport.gd")
 const MainMenu = preload("res://scripts/menu.gd")
 const HangarScene = preload("res://scenes/hangar.gd")
+const StagesScene = preload("res://scripts/stages.gd")
 
 var camera_yaw := 0.0
 var camera_pitch := -0.18
@@ -177,10 +178,36 @@ func on_menu_selected(option: String):
             open_hangar()
 
         "stages":
-            show_message("MISSIONS - COMING SOON")
+            open_stages()
 
         "settings":
             show_message("SETTINGS - COMING SOON")
+
+
+func open_stages():
+    flight_ui.visible = false
+
+    var stages = StagesScene.new()
+    stages.name = "Stages"
+    stages.set_anchors_and_offsets_preset(
+        Control.PRESET_FULL_RECT
+    )
+
+    var layer = CanvasLayer.new()
+    layer.name = "StagesLayer"
+    add_child(layer)
+    layer.add_child(stages)
+
+    current_page = layer
+
+    stages.mission_selected.connect(on_mission_selected)
+    stages.back_requested.connect(create_main_menu)
+
+
+func on_mission_selected(mission: int, difficulty: String):
+    show_message(
+        "MISSION " + str(mission) + " - " + difficulty
+    )
 
 
 func open_hangar():
@@ -204,11 +231,19 @@ func open_hangar():
 
 
 func show_message(message: String):
+    if is_instance_valid(current_page):
+        current_page.queue_free()
+
+    var layer = CanvasLayer.new()
+    layer.name = "MessageLayer"
+    add_child(layer)
+    current_page = layer
+
     var page = Control.new()
-    page.name = "MessagePage"
-    page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    add_child(page)
-    current_page = page
+    page.set_anchors_and_offsets_preset(
+        Control.PRESET_FULL_RECT
+    )
+    layer.add_child(page)
 
     var background = ColorRect.new()
     background.color = Color(0.025, 0.045, 0.08)
